@@ -5,6 +5,10 @@ import com.stockguardian.restapi.models.Stock;
 import com.stockguardian.restapi.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     boolean existsByUserAndStock(User user, Stock stock);
+
+    List<Portfolio> findByUser(User user);
 }

@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class PortfolioService {
     private final StockRepository stockRepository;
@@ -38,5 +41,17 @@ public class PortfolioService {
         }
 
         portfolioRepository.save(new Portfolio(user, stock));
+    }
+
+    /**
+     * Retrieves the list of stocks in the user's portfolio.
+     *
+     * @param user The user whose portfolio is to be retrieved.
+     * @return A list of Stock objects representing the user's portfolio.
+     */
+    public List<Stock> getUserPortfolio(User user) {
+        return portfolioRepository.findByUser(user).stream()
+                .map(Portfolio::getStock)
+                .collect(Collectors.toList());
     }
 }
