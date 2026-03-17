@@ -9,6 +9,10 @@ import lombok.Getter;
 public enum ErrorCode {
     // Users
     USER_TELEGRAM_ID_CONFLICT("TELEGRAM_ID_CONFLICT"),
+    USER_NOT_FOUND("USER_NOT_FOUND"),
+
+    // Portfolio
+    STOCK_ALREADY_IN_PORTFOLIO("STOCK_ALREADY_IN_PORTFOLIO"),
 
     // General
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR"),
