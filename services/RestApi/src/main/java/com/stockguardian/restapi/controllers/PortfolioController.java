@@ -46,4 +46,16 @@ public class PortfolioController {
                 .status(HttpStatus.OK)
                 .body(new PortfolioResponse(portfolioStocks, portfolioStocks.size()));
     }
+
+    @DeleteMapping("/{ticker}")
+    public ResponseEntity<DeleteStockResponse> deleteStockFromPortfolio(
+            @Valid @RequestBody TelegramChatRequest request,
+            @PathVariable String ticker
+    ) {
+        User user = userService.getUserByTelegramChatId(request.getTelegramChatId());
+        portfolioService.deleteStockFromPortfolio(user, ticker);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new DeleteStockResponse(ticker, "Stock removed from portfolio successfully."));
+    }
 }

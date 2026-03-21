@@ -1,6 +1,7 @@
 package com.stockguardian.restapi.services;
 
 import com.stockguardian.restapi.exceptions.StockAlreadyInPortfolioException;
+import com.stockguardian.restapi.exceptions.StockNotInPortfolioException;
 import com.stockguardian.restapi.models.Portfolio;
 import com.stockguardian.restapi.models.Stock;
 import com.stockguardian.restapi.models.User;
@@ -53,5 +54,26 @@ public class PortfolioService {
         return portfolioRepository.findByUser(user).stream()
                 .map(Portfolio::getStock)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Deletes a stock from the user's portfolio.
+     *
+     * @param user   The user from whose portfolio the stock will be deleted.
+     * @param ticker The ticker symbol of the stock to be deleted.
+     */
+    public void deleteStockFromPortfolio(User user, String ticker) {
+        Stock stock = stockRepository.findByTicker(ticker)
+                .orElseThrow(() -> new StockNotInPortfolioException(ticker));
+
+        Portfolio portfolioEntry = portfolioRepository.findByUserAndStock(user, stock)
+                .orElseThrow(() -> new StockNotInPortfolioException(ticker));
+
+        portfolioRepository.delete(portfolioEntry);
+
+        // check if the stock in other user portfolio, if not delete the stock from stock table
+        if (!portfolioRepository.existsByStock(stock)) {
+            stockRepository.delete(stock);
+        }
     }
 }
