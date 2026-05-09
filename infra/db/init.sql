@@ -7,8 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS stocks (
     id           SERIAL PRIMARY KEY,
-    ticker       VARCHAR(10)  NOT NULL UNIQUE,
-    company_name VARCHAR(255) NOT NULL
+    ticker       VARCHAR(10)  NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS portfolio (
