@@ -7,6 +7,11 @@ from services.TickerAnalyzer.src.analyzer import TickerAnalyzer
 from shared.graph_client import Neo4jClient
 from shared.redis_helper import RedisStreamConsumer
 
+TICKER_ALREADY_EXISTS_QUERY = """
+OPTIONAL MATCH (t:Ticker { ticker: $ticker })
+RETURN t IS NOT NULL AS exists
+"""
+
 GET_ALL_SECTORS_QUERY = """
 MATCH (s:Sector)
 RETURN s.name AS sector_name
@@ -85,14 +90,25 @@ class TickerAnalyzerService:
 			logger.warning("Missing 'ticker' in data. Skipping message.")
 			return
 		
+		ticker = ticker.upper()
+		
+		exists_result = self.neo4j_client.run_query(TICKER_ALREADY_EXISTS_QUERY, parameters={"ticker": ticker})
+		if exists_result and exists_result[0].get("exists"):
+			logger.info(f"Ticker '{ticker}' already exists in the graph. Skipping analysis.")
+			return
+		
 		existing_sectors = self.neo4j_client.run_query(GET_ALL_SECTORS_QUERY)
 		existing_sectors = [sector.get("sector_name") for sector in existing_sectors]
 		
-		logger.info(f"Found {len(existing_sectors)} sectors.")
-		logger.info(f"Existing sectors: {existing_sectors}")
+		logger.info(f"Existing sectors({len(existing_sectors)}): {existing_sectors}")
 		
 		logger.info(f"Analyzing ticker: {ticker}")
 		analysis_result = self.analyzer.analyze_ticker(ticker, existing_sectors)
+		
+		if not analysis_result:
+			logger.error(f"Analysis failed for ticker: {ticker}. No result returned.")
+			return
+		
 		logger.info(f"analyzing result: {analysis_result}")
 		
 		self.neo4j_client.run_write(WRITE_ANALYZED_NODES_QUERY, parameters=analysis_result.to_dict())

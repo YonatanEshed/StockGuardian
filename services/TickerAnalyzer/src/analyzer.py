@@ -1,6 +1,8 @@
 import json
 import logging
 
+from google.genai.errors import ClientError
+
 from services.TickerAnalyzer.src.analyze_response_schema import AnalyzedTickerSchema
 from shared.llm_client import get_ai_client
 
@@ -53,7 +55,7 @@ class TickerAnalyzer:
 		self.ai_client = get_ai_client(api_key)
 		logger.info("AI client successfully initialized.")
 	
-	def analyze_ticker(self, ticker: str, existing_sectors: list[str]) -> AnalyzedTickerSchema:
+	def analyze_ticker(self, ticker: str, existing_sectors: list[str]) -> AnalyzedTickerSchema | None:
 		logger.info(f"Starting analysis for ticker: {ticker}")
 		
 		prompt = LLM_PROMPT_TEMPLATE.format(
@@ -62,23 +64,16 @@ class TickerAnalyzer:
 		)
 		
 		logger.info(f"Sending request to LLM for ticker: {ticker}")
-		
-		response = self.ai_client.ask_llm(
-			prompt=prompt,
-			system_instruction=LLM_SYSTEM_INSTRUCTION,
-			expected_schema=AnalyzedTickerSchema
-		)
+		try:
+			response = self.ai_client.ask_llm(
+				prompt=prompt,
+				system_instruction=LLM_SYSTEM_INSTRUCTION,
+				expected_schema=AnalyzedTickerSchema
+			)
+		except ClientError as e:
+			logger.error(f"Error during LLM request for ticker {ticker}: {e}")
+			return None
 		
 		logger.info(f"Successfully received LLM response for ticker: {ticker}")
 		
 		return response
-
-
-if __name__ == '__main__':
-	analyzer = TickerAnalyzer(api_key="AIzaSyAZzyzvY6QvVcyWXedQd5VnzXvnjpqbFeA")
-	result = analyzer.analyze_ticker("JPM")
-	
-	print(result)
-	
-	with open("analysis_result.json", "w") as f:
-		json.dump(result.to_dict(), f, indent=4)
