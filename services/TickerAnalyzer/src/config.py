@@ -27,13 +27,19 @@ class Config(BaseSettings):
 	@field_validator("LLM_API_KEY", mode="after")
 	def validate_gemini_key(cls, value: SecretStr) -> SecretStr:
 		raw_key = value.get_secret_value()
+		key_len = len(raw_key)
 		
-		if len(raw_key) != 39:
-			raise ValueError(f"Gemini API key must be exactly 39 characters long (got {len(raw_key)})")
+		if key_len not in (39, 53):
+			raise ValueError(
+				f"Gemini API key must be 39 or 53 characters long (got {key_len})"
+			)
 		
-		gemini_regex = r"^(AIzaSy|AQ)[a-zA-Z0-9_-]{33,37}$"
+		gemini_regex = r"^(AIzaSy[a-zA-Z0-9_-]{35}|AQ\.Ab[a-zA-Z0-9_\.-]{48})$"
+		
 		if not re.match(gemini_regex, raw_key):
-			raise ValueError("Invalid Gemini API key format. Key must be a valid Google API key structure.")
+			raise ValueError(
+				"Invalid Gemini API key format. Key must match a valid Google API key structure."
+			)
 		
 		return value
 	
