@@ -83,8 +83,7 @@ services:
 
     restapi:
         build:
-            context: .
-            dockerfile: services/RestApi/Dockerfile
+            context: ./services/RestApi
         image: stockguardian-restapi:latest
         restart: unless-stopped
         ports:
@@ -93,6 +92,8 @@ services:
             POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-stock_pipeline}
             POSTGRES_USER: ${POSTGRES_USER:-admin}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+            REDIS_HOST: ${REDIS_HOST}
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
         depends_on:
             - postgres
 
@@ -103,7 +104,7 @@ services:
         image: stockguardian-ticker-analyzer:latest
         restart: unless-stopped
         environment:
-            REDIS_HOST: redis
+            REDIS_HOST: ${REDIS_HOST}
             REDIS_PORT: 6379
             REDIS_STREAM_KEY: ${TICKER_ANALYZER_SERVICE_REDIS_STREAM_KEY}
             REDIS_GROUP_NAME: ${TICKER_ANALYZER_SERVICE_REDIS_GROUP_NAME}

@@ -4,6 +4,7 @@ import com.stockguardian.restapi.dto.*;
 import com.stockguardian.restapi.models.Stock;
 import com.stockguardian.restapi.models.User;
 import com.stockguardian.restapi.services.PortfolioService;
+import com.stockguardian.restapi.services.TickerAnalyzerPublisher;
 import com.stockguardian.restapi.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,16 +18,21 @@ import java.util.List;
 public class PortfolioController {
     private final PortfolioService portfolioService;
     private final UserService userService;
+    private final TickerAnalyzerPublisher tickerAnalyzerPublisher;
 
-    public PortfolioController(PortfolioService portfolioService, UserService userService) {
+    public PortfolioController(PortfolioService portfolioService, UserService userService,
+                               TickerAnalyzerPublisher tickerAnalyzerPublisher) {
         this.portfolioService = portfolioService;
         this.userService = userService;
+        this.tickerAnalyzerPublisher = tickerAnalyzerPublisher;
     }
 
     @PostMapping
     public ResponseEntity<AddStockResponse> addStockToPortfolio(@Valid @RequestBody AddStockRequest request) {
         User user = userService.getUserByTelegramChatId(request.getTelegramChatId());
         portfolioService.addStockToPortfolio(user, request.getTicker());
+
+        tickerAnalyzerPublisher.publish(request.getTicker());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
