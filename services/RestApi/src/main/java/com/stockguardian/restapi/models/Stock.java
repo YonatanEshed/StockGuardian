@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Stock {
     public Stock(String ticker) {
-        this.ticker = ticker;
+        this.ticker = ticker.toUpperCase();
     }
 
     @Id
