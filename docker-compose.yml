@@ -92,8 +92,32 @@ services:
             POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-stock_pipeline}
             POSTGRES_USER: ${POSTGRES_USER:-admin}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+            REDIS_HOST: ${REDIS_HOST}
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
         depends_on:
             - postgres
+
+    tickerAnalyzer:
+        build:
+            context: .
+            dockerfile: services/TickerAnalyzer/Dockerfile
+        image: stockguardian-ticker-analyzer:latest
+        restart: unless-stopped
+        environment:
+            REDIS_HOST: ${REDIS_HOST}
+            REDIS_PORT: 6379
+            REDIS_STREAM_KEY: ${TICKER_ANALYZER_SERVICE_REDIS_STREAM_KEY}
+            REDIS_GROUP_NAME: ${TICKER_ANALYZER_SERVICE_REDIS_GROUP_NAME}
+            REDIS_CONSUMER_NAME: analyzer-service-1
+            REDIS_BLOCK_TIMEOUT_MS: 2000
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
+            NEO4J_URI: bolt://neo4j:7687
+            NEO4J_USER: ${NEO4J_USER}
+            NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+            LLM_API_KEY: ${GEMINI_API_KEY}
+        depends_on:
+            - redis
+            - neo4j
 
 volumes:
     postgres_data:
