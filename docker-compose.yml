@@ -119,6 +119,20 @@ services:
             - redis
             - neo4j
 
+    newsFetcher:
+      build:
+        context: .
+        dockerfile: services/NewsFetcher/Dockerfile
+      image: stockguardian-news-fetcher:latest
+      restart: unless-stopped
+      environment:
+        REDIS_HOST: ${REDIS_HOST}
+        REDIS_PORT: 6379
+        REDIS_PASSWORD: ${REDIS_PASSWORD}
+        NEXT_SERVICE_STREAM_KEY: ${EVENT_ANALYZER_SERVICE_REDIS_STREAM_KEY}
+      depends_on:
+        - redis
+
 volumes:
     postgres_data:
     pgadmin_data:
