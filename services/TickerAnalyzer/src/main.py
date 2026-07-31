@@ -47,13 +47,8 @@ RETURN t.ticker AS processed_ticker
 """
 
 
-class TickerAnalyzerService:
+class TickerAnalyzerService(RedisStreamConsumer):
 	"""Main service class for TickerAnalyzer."""
-	
-	redis_client: redis.Redis
-	neo4j_client: Neo4jClient
-	analyzer: TickerAnalyzer
-	redis_stream_consumer: RedisStreamConsumer
 	
 	def __init__(self):
 		try:
@@ -62,28 +57,31 @@ class TickerAnalyzerService:
 				host=config.REDIS_HOST,
 				port=config.REDIS_PORT
 			)
-			self.redis_stream_consumer = RedisStreamConsumer(
-				redis_client=redis_client,
-				stream_name=config.REDIS_STREAM_KEY,
-				group_name=config.REDIS_GROUP_NAME,
-				consumer_name=config.REDIS_CONSUMER_NAME
-			)
+			
 			self.neo4j_client = Neo4jClient(
 				uri=str(config.NEO4J_URI),
 				user=config.NEO4J_USER,
 				password=config.NEO4J_PASSWORD.get_secret_value()
 			
 			)
+			
 			self.analyzer = TickerAnalyzer(
 				api_key=config.LLM_API_KEY.get_secret_value()
 			)
 			
-			logger.info("TickerAnalyzer infrastructure successfully initialized.")
+			super().__init__(
+				redis_client=redis_client,
+				stream_name=config.REDIS_STREAM_KEY,
+				group_name=config.REDIS_GROUP_NAME,
+				consumer_name=config.REDIS_CONSUMER_NAME
+			)
+			
+			logger.info("TickerAnalyzer service successfully initialized.")
 		except Exception as e:
 			logger.critical(f"Initialization failure: {e}")
 			return
 	
-	def process_message(self, data: dict[str, Any]) -> None:
+	def handle_event(self, data: dict[str, Any]) -> None:
 		ticker = data.get("ticker")
 		
 		if not ticker:
@@ -114,9 +112,6 @@ class TickerAnalyzerService:
 		self.neo4j_client.run_write(WRITE_ANALYZED_NODES_QUERY, parameters=analysis_result.to_dict())
 		
 		logger.info(f"Successfully saved {ticker} metrics.")
-	
-	def run(self) -> None:
-		self.redis_stream_consumer.listen(self.process_message, config.REDIS_BLOCK_TIMEOUT_MS)
 
 
 def main():
